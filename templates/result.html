@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transcription Result</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Transcription Result</h1>
+    <h2>Transcribed Text</h2>
+    <pre>{{ transcription }}</pre>
+    
+    <h2>Processed Text from Ollama</h2>
+    <pre>{{ processed_text }}</pre>
+    
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+</div>
+</body>
+</html>

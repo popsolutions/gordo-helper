@@ -1,15 +1,29 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
-from timeout_middleware import TimeoutMiddleware
 import os
 import subprocess
 import whisper
+import requests
+import concurrent.futures
+import datetime
+import socket
 
 app = Flask(__name__)
-app.secret_key = 'eos5dmk2'
-UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.secret_key = 'supersecretkey'
+app.config['UPLOAD_FOLDER'] = 'uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-app.wsgi_app = TimeoutMiddleware(app.wsgi_app, timeout=300)
+# Timeout settings
+REQUEST_TIMEOUT = 120
+
+def get_local_ip():
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    return local_ip
+
+def generate_unique_filename(extension):
+    local_ip = get_local_ip()
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    return f"{local_ip}_{timestamp}.{extension}"
 
 def convert_mp4_to_mp3(input_file, output_file):
     try:
@@ -33,7 +47,35 @@ def transcribe_audio(mp3_file, language):
         f.write(transcription)
     print(f"Transcription saved to {transcription_file}")
     
-    return transcription_file
+    return transcription_file, transcription
+
+def process_with_ollama(transcription):
+    ollama_url = 'http://localhost:1234/v1/chat/completions'
+    payload = {
+        "model": "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF",
+        "messages": [
+            {"role": "system", "content": "Always answer in rhymes."},
+            {"role": "user", "content": transcription}
+        ],
+        "temperature": 0.7,
+        "max_tokens": -1,
+        "stream": False
+    }
+    headers = {"Content-Type": "application/json"}
+    try:
+        response = requests.post(ollama_url, json=payload, headers=headers)
+        response.raise_for_status()
+        processed_text = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
+        print(f"Processed text: {processed_text}")
+        return processed_text
+    except requests.RequestException as e:
+        print(f"Error processing with Ollama: {e}")
+        raise
+
+def execute_with_timeout(func, *args, timeout=REQUEST_TIMEOUT, **kwargs):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(func, *args, **kwargs)
+        return future.result(timeout=timeout)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -41,23 +83,25 @@ def index():
         language = request.form['language']
         file = request.files['file']
         if file:
-            filename = file.filename
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            extension = file.filename.rsplit('.', 1)[1]
+            unique_filename = generate_unique_filename(extension)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(file_path)
             try:
-                output_file = file_path.rsplit('.', 1)[0] + '.mp3'
-                convert_mp4_to_mp3(file_path, output_file)
-                transcription_file = transcribe_audio(output_file, language)
-                flash(f'Transcription saved to https://gordo-helper.pop.coop/{transcription_file}', 'success')
-                return redirect(url_for('download_file', filename=os.path.basename(transcription_file)))
+                mp3_filename = generate_unique_filename('mp3')
+                mp3_path = os.path.join(app.config['UPLOAD_FOLDER'], mp3_filename)
+                execute_with_timeout(convert_mp4_to_mp3, file_path, mp3_path)
+                transcription_file, transcription = execute_with_timeout(transcribe_audio, mp3_path, language)
+                processed_text = execute_with_timeout(process_with_ollama, transcription)
+                flash('Transcription and processing completed.', 'success')
+                return render_template('result.html', transcription=transcription, processed_text=processed_text)
+            except concurrent.futures.TimeoutError:
+                flash('An error occurred: Request timed out.', 'danger')
+                return redirect(url_for('index'))
             except Exception as e:
                 flash(f'An error occurred: {str(e)}', 'danger')
                 return redirect(url_for('index'))
     return render_template('index.html')
-
-@app.route('/uploads/<filename>')
-def download_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
 
 if __name__ == '__main__':
     app.run(debug=True)
