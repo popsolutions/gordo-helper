@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>Audio Transcription Tool</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script>
+        window.onload = function() {
+            alert("If you receive a timeout error, it is likely because your audio file is longer than a few minutes. As a result, your browser might timeout, but the server will continue processing your request. The transcription and/or summary will appear in the 'Transcribed Files' and/or 'Summarized Files' sections below.");
+        }
+    </script>
 </head>
 <body>
 <div class="container mt-5">
