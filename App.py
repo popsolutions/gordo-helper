@@ -25,10 +25,10 @@ def get_local_ip():
     return local_ip
 
 def generate_unique_filename(extension, custom_name=None):
-    if custom_name:
-        return f"{custom_name}.{extension}"
-    local_ip = get_local_ip()
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")  # Include microseconds for more uniqueness
+    if custom_name:
+        return f"{custom_name}_{timestamp}.{extension}"
+    local_ip = get_local_ip()
     return f"{local_ip}_{timestamp}.{extension}"
 
 def convert_mp4_to_mp3(input_file, output_file):
@@ -107,9 +107,12 @@ def index():
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
                 try:
-                    mp3_filename = generate_unique_filename('mp3', custom_name)
-                    mp3_path = os.path.join(app.config['UPLOAD_FOLDER'], mp3_filename)
-                    execute_with_timeout(convert_mp4_to_mp3, file_path, mp3_path)
+                    if extension.lower() != 'mp3':
+                        mp3_filename = generate_unique_filename('mp3', custom_name)
+                        mp3_path = os.path.join(app.config['UPLOAD_FOLDER'], mp3_filename)
+                        execute_with_timeout(convert_mp4_to_mp3, file_path, mp3_path)
+                    else:
+                        mp3_path = file_path
                     transcription_file, transcription = execute_with_timeout(transcribe_audio, mp3_path, language, custom_name)
                     flash('Transcription started. The file will be available in the "Transcribed Files" section soon.', 'success')
                     return redirect(url_for('index'))
@@ -126,9 +129,12 @@ def index():
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file.save(file_path)
                 try:
-                    mp3_filename = generate_unique_filename('mp3', custom_name)
-                    mp3_path = os.path.join(app.config['UPLOAD_FOLDER'], mp3_filename)
-                    execute_with_timeout(convert_mp4_to_mp3, file_path, mp3_path)
+                    if extension.lower() != 'mp3':
+                        mp3_filename = generate_unique_filename('mp3', custom_name)
+                        mp3_path = os.path.join(app.config['UPLOAD_FOLDER'], mp3_filename)
+                        execute_with_timeout(convert_mp4_to_mp3, file_path, mp3_path)
+                    else:
+                        mp3_path = file_path
                     transcription_file, transcription = execute_with_timeout(transcribe_audio, mp3_path, language, custom_name)
                     summary_file, summary = execute_with_timeout(process_with_ollama, transcription, language, "Resume the Key points of this audio", custom_name)
                     flash('Transcription and summary started. The files will be available in the "Transcribed Files" and "Summarized Files" sections soon.', 'success')
