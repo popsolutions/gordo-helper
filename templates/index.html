@@ -4,6 +4,37 @@
     <meta charset="UTF-8">
     <title>Audio Transcription Tool</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #2c2c2c;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            background-color: #1f1f1f;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        a {
+            color: #ffcc33;
+        }
+        .btn-primary {
+            background-color: #ffcc33;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #ff9933;
+        }
+        .logo {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        .progress {
+            margin-top: 10px;
+            height: 20px;
+        }
+    </style>
     <script>
         window.onload = function() {
             alert("If you receive a timeout error, it is likely because your audio file is longer than a few minutes. As a result, your browser might timeout, but the server will continue processing your request. The transcription and/or summary will appear in the 'Transcribed Files' and/or 'Summarized Files' sections below.");
@@ -11,30 +42,22 @@
     </script>
 </head>
 <body>
-<div class="container mt-5">
+<div class="container">
     <center>
-    <h1>Audio Transcription Tool</h1></br>
-    <h2>This is the Gordo Helper, always by your side.</h2></br>
-    <h3>The Gordo helper is a script for helping people</h3></br>
-    <h1>\o/</h1>
-    <h4>Upload your mp4 or m4a or mp3 or ogg file from a meeting and get the transcription</h4></br></br>
-    <h6>So if you think this is a good tool please, submit a feature request so we keep improving this software. Send an email to <a href="mailto:m@pop.coop">m@pop.coop</a> with your request</br></h6>
-    <h6>Unfortunately this AI model is running in my LAPTOP but please, if you can donate to use to get proper hardware, I'll appreciate. Also, it can be unstable, as it is running in my laptop</h6></br>
-    <form action="https://www.paypal.com/donate" method="post" target="_top">
-<input type="hidden" name="hosted_button_id" value="UGC66B9GBHUTA" />
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-<img alt="" border="0" src="https://www.paypal.com/en_BR/i/scr/pixel.gif" width="1" height="1" />
-</form>
-
-    </br>
-    </br>
-    <h1>¯\_(ツ)_/¯</h1></br></br></br>
-    <h6>If you name your file it will be easier to you find it later </h6>
+        <img src="logo2.png" alt="Pop Solutions Logo" class="logo">
+        <h1>Audio Transcription Tool</h1>
+        <h2>This is the Gordo Helper, always by your side.</h2>
+        <h4>Upload your mp4, m4a, mp3, or ogg file from a meeting and get the transcription</h4>
+        <form action="https://www.paypal.com/donate" method="post" target="_top">
+            <input type="hidden" name="hosted_button_id" value="UGC66B9GBHUTA" />
+            <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+            <img alt="" border="0" src="https://www.paypal.com/en_BR/i/scr/pixel.gif" width="1" height="1" />
+        </form>
     </center>
 
     <div class="row">
         <div class="col-md-6">
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" onsubmit="showProgressBar()">
                 <div class="form-group">
                     <label for="custom_name">Enter Custom File Name:</label>
                     <input type="text" class="form-control" id="custom_name" name="custom_name" placeholder="Optional">
@@ -49,7 +72,6 @@
                         <option value="zh">Chinese</option>
                         <option value="ja">Japanese</option>
                         <option value="pt">Português</option>
-                        <!-- Add more languages as needed -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -57,24 +79,27 @@
                     <input type="file" class="form-control-file" id="file" name="file">
                 </div>
                 <button type="submit" name="transcribe" class="btn btn-primary">Transcribe</button>
+                <div class="progress" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;"></div>
+                </div>
             </form>
-        <div class="mt-5">
-        <h4>Transcribed Files</h4>
-        <ul>
-            {% for file in transcribed_files %}
-                <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
-            {% endfor %}
-        </ul>
+            <div class="mt-5">
+                <h4>Transcribed Files</h4>
+                <ul>
+                    {% for file in transcribed_files %}
+                        <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-	</div>
         <div class="col-md-6">
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" onsubmit="showProgressBar()">
                 <div class="form-group">
                     <label for="custom_name">Enter Custom File Name:</label>
                     <input type="text" class="form-control" id="custom_name" name="custom_name" placeholder="Optional">
                 </div>
                 <div class="form-group">
-                    <label for="language">Select Resuming Language:</label>
+                    <label for="language">Select Summarization Language:</label>
                     <select class="form-control" id="language" name="language">
                         <option value="en">English</option>
                         <option value="es">Spanish</option>
@@ -83,42 +108,37 @@
                         <option value="zh">Chinese</option>
                         <option value="ja">Japanese</option>
                         <option value="pt">Português</option>
-                        <!-- Add more languages as needed -->
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="file">Upload Audio File:</label>
                     <input type="file" class="form-control-file" id="file" name="file">
                 </div>
-                <button type="submit" name="transcribe_and_resume" class="btn btn-primary">Transcribe and Resume</button>
+                <button type="submit" name="transcribe_and_resume" class="btn btn-primary">Transcribe and Summarize</button>
+                <div class="progress" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;"></div>
+                </div>
             </form>
-        <div class="mt-5">
-        <h4>Summarized Files</h4>
-        <ul>
-            {% for file in summarized_files %}
-                <li><a href="{{ url_for('download_summary', filename=file) }}">{{ file }}</a></li>
-            {% endfor %}
-        </ul>
-    </div>
-	</div>
+            <div class="mt-5">
+                <h4>Summarized Files</h4>
+                <ul>
+                    {% for file in summarized_files %}
+                        <li><a href="{{ url_for('download_summary', filename=file) }}">{{ file }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
     
     <div class="mt-5">
-        <h2>Donate if you can</h2>
-	<form action="https://www.paypal.com/donate" method="post" target="_top">
-<input type="hidden" name="hosted_button_id" value="UGC66B9GBHUTA" />
-<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-<img alt="" border="0" src="https://www.paypal.com/en_BR/i/scr/pixel.gif" width="1" height="1" />
-</form>
-
-	<h4>Documentation</h4>
+        <h2>Documentation</h2>
         <p>This tool helps you transcribe audio files (mp4, m4a, mp3, ogg) from meetings. Follow these steps:</p>
         <ol>
             <li>Select the transcription language from the dropdown menu.</li>
             <li>Enter a custom file name (optional).</li>
             <li>Upload your audio file using the file input.</li>
             <li>Click the "Transcribe" button to start the transcription process.</li>
-            <li>Click the "Transcribe and Resume" button to transcribe and get a summary of the key points.</li>
+            <li>Click the "Transcribe and Summarize" button to transcribe and get a summary of the key points.</li>
             <li>Wait for the transcription to complete and download the resulting text file.</li>
         </ol>
     </div>
@@ -127,6 +147,28 @@
         <h4>Contribute</h4>
         <p>You can contribute to the project or open issues on our <a href="https://github.com/popsolutions/gordo-helper">GitHub repository</a>.</p>
     </div>
+
+    <div class="mt-3">
+        <h4>User Feedback</h4>
+        <form>
+            <div class="form-group">
+                <label for="feedback">We value your feedback:</label>
+                <textarea class="form-control" id="feedback" rows="3" placeholder="Enter your feedback here..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+        </form>
+    </div>
 </div>
+
+<script>
+    function showProgressBar() {
+        document.querySelectorAll('.progress').forEach(function(progress) {
+            progress.style.display = 'block';
+        });
+        document.querySelectorAll('.progress-bar').forEach(function(progressBar) {
+            progressBar.style.width = '100%';
+        });
+    }
+</script>
 </body>
 </html>
